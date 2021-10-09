@@ -1,0 +1,404 @@
+---
+title: "Investigate Purchasing Habits of Corporate Partner Products and Identify Viable Market Segments"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+```
+
+```{r echo = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+```{r}
+# Course: 5210 Data Visualization
+# Purpose: Dashboard for DTC 
+# Date: August 28, 2021
+# Author: Jennifer Grosz 
+```
+
+```{r echo = FALSE}
+# Clear environment of variables and functions
+rm(list = ls(all = TRUE)) 
+```
+
+```{r echo = FALSE}
+# load packages
+library(shiny)
+library(RColorBrewer)
+library(tidyverse) # contains ggplot2, dplyr, and several other packages used
+library(vtable) # contains vtable function for summary table of data
+library(janitor) # contains tidyverse functions for cross-tables
+library(gridExtra) # contains grid.arrange function used to combine plots in the same window
+library(patchwork) # use to put graphs together in the same frame
+library(knitr) # contains some table formatting functions
+library(kableExtra) # also contains functions used for table outputs
+library(GGally) # contains a custom correlation plot 
+library(moments) # to calculate skewness
+library(scales) # use for rounding numbers
+library(corrplot) # for correlation plot
+library(tidylog) # provides comments
+options(scipen = 999) # remove scientific notation
+library(corrplot) #correlation matrix
+library(SmartEDA) # used for creating interaction tables among categorical variables
+library(inspectdf) # plots correlations
+library(arsenal) # used for interaction tables
+library(autoEDA) # package for making interaction bar plots
+library(DataExplorer)
+library(pastecs)
+library(leaflet)
+```
+
+
+```{r global, include=FALSE}
+# load product data
+sea_reign_data <- read.csv("../data/Seattle_Reign.csv")
+one <- sea_reign_data %>%
+  select(ResponseId, dycom1, Benev1, Work4, Pergrow1, Patriot3, Stim1, Selfcon1, Hedon1, Finsec1, Prosper1, Achieve1, Safe1, Phywel1, Socacc2, Compan1, Family1, Wisdom1, Marital, Educat, Income, House1, House2, LocationLatitude, LocationLongitude, Zipcode, Purchs1, Purchs2, Purchs3, Purchs4, Purchs5, Purchs6, Purchs7, Purchs8, Purchs9, Purchs10) %>%
+  mutate(ResponseId = factor(ResponseId),
+         Income = factor(Income),
+         Income = factor(Income),
+         Marital = factor(Marital),
+         Educat = factor(Educat),
+         Zipcode = factor(Zipcode)
+         ) %>%
+  mutate(across(where(is.character), ~str_replace(., "Of Supreme Importance 7", "Of Supreme Importance"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "Very Important 6", "Very Important"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "Important  3", "Important"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "Not Important 0", "Not Important"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "4", "Moderately Important"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "2", "Slightly Important"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "1", "Low Importance"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "5", "Considerably Important"))) %>%
+  mutate(across(where(is.character), as.factor))
+
+two <-sea_reign_data %>% 
+  select(ResponseId, Spnbuy1, Spnbuy2, Spnbuy3, Spnbuy4, Spnbuy5, Spnbuy6, Spnbuy7, Spnbuy8, Spnbuy9, Spnbuy10, Gender, SexOrient, Race, Age) %>%
+  mutate(ResponseId = factor(ResponseId),
+         Gender = factor(Gender),
+         SexOrient = factor(SexOrient),
+         Race = factor(Race)) %>%
+  mutate(across(where(is.character), ~str_replace(., "Not at all likely to consider them when making a purchase decision 1", "Not at all likely"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "Extremely likely to consider them when making a purchase decision 7", "Extremely likely"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "2", "Not likely"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "3", "Slightly not likely"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "4", "Neutral"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "5", "Slightly likely"))) %>%
+  mutate(across(where(is.character), ~str_replace(., "6", "Likely")))  %>%
+  mutate(across(where(is.character), as.factor))
+  
+purchasing_habits <- left_join(one, two, by = "ResponseId")
+
+purchasing_habits <- purchasing_habits %>%
+  rename(bought_carter_sub = Purchs1, 
+         bought_msft = Purchs2,
+         bought_pepsi = Purchs3,
+         bought_becu = Purchs4,
+         bought_chihuly_studio = Purchs5,
+         bought_hardrock_cafe = Purchs6,
+         bought_health_warrior = Purchs7,
+         bought_hyatt_house = Purchs8,
+         bought_kraken_congee = Purchs9,
+         bought_ruffneck_scarves = Purchs10,
+         consider_carter_sub = Spnbuy1,
+         consider_msft = Spnbuy2,
+         consider_pepsi = Spnbuy3,
+         consider_becu = Spnbuy4,
+         consider_chihuly_studio = Spnbuy5,
+         consider_hardrock_cafe = Spnbuy6,
+         consider_health_warrior = Spnbuy7,
+         consider_hyatt_house = Spnbuy8,
+         consider_kraken_congee = Spnbuy9,
+         consider_ruffneck_scarves = Spnbuy10,
+         hh_Occupants = House1,
+         Children = House2,
+         Devotion = dycom1,
+         Kindness = Benev1,
+         Dilligence = Work4,
+         Personal_Growth = Pergrow1,
+         Patriotism = Patriot3,
+         Daringness = Stim1,
+         Self_Control = Selfcon1,
+         Self_Indulgence = Hedon1,
+         Financial_Security = Finsec1,
+         Wealth = Prosper1,
+         Success = Achieve1,
+         Physical_Safety = Safe1,
+         Physical_Fitness = Phywel1,
+         Social_Acceptance = Socacc2,
+         Companionship = Compan1,
+         Family = Family1,
+         Wisdom = Wisdom1,
+         Education = Educat,
+         Marital_Status = Marital) %>%
+  drop_na()
+
+bought_carter_sub <- purchasing_habits %>%
+  filter(bought_carter_sub == "Yes") %>%
+  mutate(Bought = "Carter Subaru",
+         num_Purchases = n()) %>%
+  select(ResponseId, Bought, num_Purchases)
+
+bought_msft <- purchasing_habits %>%
+  filter(bought_msft == "Yes") %>%
+  mutate(Bought = "Microsoft",
+         num_Purchases = n()) %>%
+  select(ResponseId, Bought, num_Purchases)
+
+bought_pepsi <- purchasing_habits %>%
+  filter(bought_pepsi == "Yes") %>%
+  mutate(Bought = "Pepsi",
+         num_Purchases = n()) %>%
+  select(ResponseId, Bought, num_Purchases)
+
+bought_becu <- purchasing_habits %>%
+  filter(bought_becu == "Yes") %>%
+  mutate(Bought = "BECU",
+         num_Purchases = n()) %>%
+  select(ResponseId, Bought, num_Purchases)
+
+bought_chihuly_studio <- purchasing_habits %>%
+  filter(bought_chihuly_studio == "Yes") %>%
+  mutate(Bought = "Chihuly Studio",
+         num_Purchases = n()) %>%
+  select(ResponseId, Bought, num_Purchases)
+
+bought_hardrock_cafe <- purchasing_habits %>%
+  filter(bought_hardrock_cafe == "Yes") %>%
+  mutate(Bought = "Hardrock Café",
+         num_Purchases = n()) %>%
+  select(ResponseId, Bought, num_Purchases)
+
+bought_health_warrior <- purchasing_habits %>%
+  filter(bought_health_warrior == "Yes") %>%
+  mutate(Bought = "Health Warrior",
+         num_Purchases = n()) %>%
+  select(ResponseId, Bought, num_Purchases)
+
+bought_kraken_congee <- purchasing_habits %>%
+  filter(bought_kraken_congee == "Yes") %>%
+  mutate(Bought = "Kraken Congee",
+         num_Purchases = n()) %>%
+  select(ResponseId, Bought, num_Purchases)
+
+bought_ruffneck_scarves <- purchasing_habits %>%
+  filter(bought_ruffneck_scarves == "Yes") %>%
+  mutate(Bought = "Ruffneck Scarves",
+         num_Purchases = n()) %>%
+  select(ResponseId, Bought, num_Purchases)
+
+long <- bind_rows(bought_carter_sub, bought_msft, bought_pepsi, bought_becu, bought_chihuly_studio, bought_hardrock_cafe, bought_health_warrior,bought_kraken_congee, bought_ruffneck_scarves )
+
+df <- left_join(long, purchasing_habits, by = "ResponseId" )
+
+df <- df %>%
+  mutate(Bought = factor(Bought)) %>%
+  mutate(Carter_Subaru  = case_when(
+           bought_carter_sub == "I don't know" ~ "No",
+           bought_carter_sub == "No" ~ "No",
+           bought_carter_sub == "Yes" ~ "Yes"),
+         Microsoft = case_when(
+           bought_msft == "I don't know" ~ "No",
+           bought_msft == "No" ~ "No",
+           bought_msft == "Yes" ~ "Yes"),
+         Pepsi = case_when(
+           bought_pepsi == "I don't know" ~ "No",
+           bought_pepsi == "No" ~ "No",
+           bought_pepsi == "Yes" ~ "Yes"),
+         BECU = case_when(
+           bought_becu == "I don't know" ~ "No",
+           bought_becu == "No" ~ "No",
+           bought_becu == "Yes" ~ "Yes"),
+         Chihuly_Studio = case_when(
+           bought_chihuly_studio == "I don't know" ~ "No",
+           bought_chihuly_studio == "No" ~ "No",
+           bought_chihuly_studio == "Yes" ~ "Yes"),
+         Hardrock_Cafe = case_when(
+           bought_hardrock_cafe == "I don't know" ~ "No",
+           bought_hardrock_cafe == "No" ~ "No",
+           bought_hardrock_cafe == "Yes" ~ "Yes"),
+         Health_Warrior = case_when(
+           bought_health_warrior == "I don't know" ~ "No",
+           bought_health_warrior == "No" ~ "No",
+           bought_health_warrior == "Yes" ~ "Yes"),
+         Hyatt_House = case_when(
+           bought_hyatt_house == "I don't know" ~ "No",
+           bought_hyatt_house == "No" ~ "No",
+           bought_hyatt_house == "Yes" ~ "Yes"),
+         Kraken_Congee = case_when(
+           bought_kraken_congee == "I don't know" ~ "No",
+           bought_kraken_congee == "No" ~ "No",
+           bought_kraken_congee == "Yes" ~ "Yes"),
+         Ruffneck_Scarves = case_when(
+           bought_ruffneck_scarves == "I don't know" ~ "No",
+           bought_ruffneck_scarves == "No" ~ "No",
+           bought_ruffneck_scarves == "Yes" ~ "Yes"),
+         All = Bought) %>%
+  mutate(across(where(is.character), as.factor))
+
+# initialize pop up messages
+popup <- paste0("Zip Code: ", purchasing_habits$Zipcode, "<br>", 
+                "Income: ", purchasing_habits$Income,  "<br>",
+                "Education: ", purchasing_habits$Education, "<br>",
+                "Marital Status: ",  purchasing_habits$Marital_Status,  "<br>",
+                "Sexual Orientation: ",  purchasing_habits$SexOrient,  "<br>",
+                "Gender: ", purchasing_habits$Gender,  "<br>",
+                "Age: ",  purchasing_habits$Age,  "<br>",
+                "Race: ",  purchasing_habits$Race,  "<br>",
+                "Household Occupants: ",  purchasing_habits$hh_occupants,  "<br>",
+                "Children: ",  purchasing_habits$children,"<br>",
+                  "<br>",
+                "Purchase in last 6 months: ",  "<br>",
+                "Carter Subaru: ",  purchasing_habits$bought_carter_sub,"<br>",
+                "Microsoft: ",  purchasing_habits$bought_msft,"<br>",
+                "Pepsi: ",  purchasing_habits$bought_pepsi,"<br>",
+                "BECU: ",  purchasing_habits$bought_becu,"<br>",
+                "Chihuly Studio: ",  purchasing_habits$bought_chihuly_studio,"<br>",
+                "Hardrock Cafe: ",  purchasing_habits$bought_hardrock_cafe,"<br>",
+                "Health Warrior: ",  purchasing_habits$bought_health_warrior,"<br>",
+                "Kraken Congee: ",  purchasing_habits$bought_kraken_congee,"<br>",
+                "Ruffneck Scarves: ",  purchasing_habits$bought_ruffneck_scarves,"<br>")
+```
+
+
+```{r}
+df <- df[,c("Devotion", "Kindness", "Dilligence", "Personal_Growth", "Patriotism", "Daringness", "Self_Control", "Self_Indulgence", "Financial_Security", "Wealth", "Success", "Physical_Safety", "Physical_Fitness", "Social_Acceptance", "Companionship", "Family", "Wisdom", "Carter_Subaru", "Microsoft", "Pepsi", "BECU", "Chihuly_Studio", "Hardrock_Cafe", "Health_Warrior", "Hyatt_House", "Kraken_Congee", "Ruffneck_Scarves", "Age", "Gender", "SexOrient", "Race", "Marital_Status", "Education", "Income", "Zipcode", "hh_Occupants", "Children", "num_Purchases", "All")]
+
+df_psycho_dem <- df[,c("Devotion", "Kindness", "Dilligence", "Personal_Growth", "Patriotism", "Daringness", "Self_Control", "Self_Indulgence", "Financial_Security", "Wealth", "Success", "Physical_Safety", "Physical_Fitness", "Social_Acceptance", "Companionship", "Family", "Wisdom", "Age", "Gender", "SexOrient", "Race", "Marital_Status", "Education", "Income", "hh_Occupants", "Children")]
+
+df_corp_part <- df[,c("Carter_Subaru", "Microsoft", "Pepsi", "BECU", "Chihuly_Studio", "Hardrock_Cafe", "Health_Warrior", "Hyatt_House", "Kraken_Congee", "Ruffneck_Scarves", "All")]
+
+df_num <- df[,c("Age", "num_Purchases", "hh_Occupants", "Children")]
+
+
+```
+
+```{r}
+# create customized theme function starting with theme_classic()
+clean_theme <- theme_classic() +
+  theme(legend.direction = "horizontal", # create horizontal legend
+        legend.position = "bottom", # put legend at bottom of graph
+        legend.justification='left', # align legend to the left
+        legend.title = element_blank(), # remove legend title
+        axis.line.y = element_blank(), # remove y-axis line
+        axis.ticks.y = element_blank(), # remove y-axis ticks
+        axis.ticks.x = element_blank(), # remove x-axis ticks
+        plot.title = element_text(face = "bold", size = 15)) # make graph title bold and a larger font
+```
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+  
+```{r}
+
+# Select x axis variable      
+selectInput('x', 'X-Axis Variable', names(df_corp_part), names(df_corp_part)[[2]])
+
+# Select y axis variable      
+selectInput('y', 'Y-Axis Variable', names(df_num), names(df_num)[[2]])
+      
+# Differentiate by Demographics and Psychographcis
+selectInput('color', 'Demographic and Psychographic Comparison Group', c('None', names(df_psycho_dem)), names(df_psycho_dem)[[2]])
+
+```
+
+
+```{r}
+# Create data that is updated/filtered by slider
+live_off <- reactive({
+    df 
+   })
+
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Customizable Boxplot: Average of Input Y by Input X
+  
+```{r}
+# Boxplot data determined by user input
+renderPlot({
+    p <- ggplot(live_off(), aes_string(x=input$x, y=input$y)) + 
+      geom_boxplot()
+    
+    if (input$color != 'None')
+      p <- p + aes_string(color=input$color)
+
+    p <- p + clean_theme +
+  scale_fill_manual(values = c( "#89CFF0", "#0818A8", "#CCCCFF", "#336699", "#5F9EA0", "#6495ED", "#6082B6", "#B6D0E2", "#96DED1"))
+    
+    print(p)
+
+  })
+
+```
+
+
+### Customizable Bar Chart: Average of Input Y by Input X
+  
+```{r}
+# Bar plot data determined by user input
+renderPlot({
+    p <- ggplot(live_off(), aes_string(x=input$x, y=input$y)) + 
+       geom_bar(stat = "summary", fun.y = "median", position = "dodge", color = "black") +
+         ylab(paste("Median of ", input$y))
+    
+    if (input$color != 'None')
+      p <- p + aes_string(fill=input$color)
+
+    p <- p + clean_theme + coord_flip() +
+  scale_fill_manual(values = c( "#89CFF0", "#0818A8", "#CCCCFF", "#336699", "#5F9EA0", "#6495ED", "#6082B6", "#B6D0E2", "#96DED1"))
+    
+    print(p)
+
+  })
+
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Interactive Customer Map, click on markers for purchase and demographic information
+
+```{r}
+marker_map <- leaflet(data = purchasing_habits) # create map widget and add data set to it
+
+marker_map <- marker_map %>%
+    addTiles()  # add map tile
+
+# add some circles to a map
+marker_map <- marker_map %>% 
+  # add markers to map
+  addMarkers(lng = ~LocationLongitude, # sets longitude to values in column "longitude" from the data 
+             lat = ~LocationLatitude, # sets latitude to values in column "latitude" from the data 
+             popup = popup) # sets pop up text to be the information created above with zip code averages
+marker_map
+```
+
+### Customizable Bar Chart: Average of Input Y by Comprison Group
+
+```{r}
+# Scatter plot data determined by user input
+# Bar plot data determined by user input
+# Bar plot data determined by user input
+renderPlot({
+    p <- ggplot(live_off(), aes_string(x=input$color, y=input$y)) + 
+       geom_bar(stat = "summary", fun.y = "median", position = "dodge", color = "black") +
+         ylab(paste("Median of ", input$y))
+    
+    if (input$color != 'None')
+      p <- p + aes_string(fill=input$x)
+
+    p <- p + clean_theme + coord_flip() +
+  scale_fill_manual(values = c("#89CFF0", "#0818A8", "#CCCCFF", "#336699", "#5F9EA0", "#6495ED", "#6082B6", "#B6D0E2", "#96DED1"))
+    
+    print(p)
+
+  })
+```

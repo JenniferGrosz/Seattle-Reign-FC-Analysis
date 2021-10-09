@@ -1,0 +1,146 @@
+---
+title: "Reign FC Fan Satisfaction Analysis"
+author: "Jennifer Grosz"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  slidy_presentation:
+    fig_width: 7
+    fig_height: 6
+    fig_caption: true
+---
+
+```{r echo = FALSE}
+# Course: 5210 Data Vis
+# Purpose: Slides for DTC
+# Date: August 28, 2021
+# Author: Jennifer Grosz
+
+```
+
+```{r echo = FALSE}
+# Clear environment of variables and functions
+rm(list = ls(all = TRUE)) 
+
+# Clear environment of packages
+if(is.null(sessionInfo()$otherPkgs) == FALSE)lapply(paste("package:", names(sessionInfo()$otherPkgs), sep=""), detach, character.only = TRUE, unload = TRUE)
+
+```
+
+```{r echo = FALSE, message = FALSE}
+# Load packages
+library(tidyverse)
+
+```
+
+
+Understanding Ad & Promo Performance {.smaller}
+===============================================
+
+<div style="float: center; width: 100%">
+
+<br>
+
+This presentation will walk you through the significant findings uncovered by an analysis of survey data pertaining to match day satisfaction of Reign FC fans.
+
+<br>
+
+Understanding the satisfaction of Reign FC fans is key for determining strategies to improve satisfaction as well as brand attitude moving forward.
+
+<br>
+
+![](../images/logo.png){width=24%}
+
+</div>
+
+
+7-point Scalar Survey Structure {.smaller}
+===============================================
+
+<div style="float: left; width: 90%;">
+
+Example: **I consider myself to be a "real" fan of Seattle Reign FC**
+
+Answer Options:
+
+  - Strongly Disagree
+  
+  - Disagree
+  
+  - Somewhat Disagree
+  
+  - Neutral
+  
+  - Somewhat Agree
+  
+  - Agree
+  
+  - Strongly Agree
+
+</div>
+
+Match Day Experience and Memorial Stadium Satisfaction {.smaller}
+===============================================
+
+<div style="float: center; width: 99%;">
+
+ </div>
+
+<div style="float: left; width: 50%;">
+
+![](../images/pres1.png){width=90%}
+
+ </div>
+
+<div style="float: left; width: 50%;">
+ 
+![](../images/pres2.png){width=90%}
+
+</div>
+ 
+Recommendation 1:  Beer Garden {.smaller}
+===============================================
+
+<div style="float: center; width: 50%;">
+
+ </div>
+
+<div style="float: left; width: 45%;">
+
+![](../images/pres3.png){width=90%}
+
+ </div>
+
+<div style="float: left; width: 45%;">
+
+
+ ![](../images/pres4.png){width=90%} 
+
+</div>
+
+
+Recommendation 2:  Restroom Cleanliness{.smaller}
+===============================================
+
+<div style="float: left; width: 45%;">
+
+![](../images/pres5.png){width=90%} 
+
+</div>
+
+Conclusion {.smaller}
+===============================================
+
+<div style="float: left; width: 90%;">
+
+A fan's satisfaction with their experience at Reign FC matches attended in Memorial Stadium can be improved by resolving issues stemming from the beer garden itself and the convenience of beer garden locations. 
+
+<br>
+
+In order to identify the specific issues fans have with the beer garden at Memorial Stadium another survey need to be conducted, but at this time using the results from this initial survey I can tell you that the beer garden is a prominent source of fan dissatisfaction.
+
+Furthermore a fan's satisfaction with their matchday experience at Memorial Stadium can also be improved by providing cleaner restrooms.
+
+</div>
+
+
+
